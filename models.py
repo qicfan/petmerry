@@ -78,9 +78,11 @@ class Category(ModelBase):
 	>>> category.category_name = u'cat1'
 	>>> category.parent_id = 0
 	>>> category.create_time = u'2012-07-09 18:00:00'
-	>>> category.save()
+	>>> id = category.save()
+	>>> type(id)
+	<class 'bson.objectid.ObjectId'>
 	修改一个分类
-	>>> category = Category.find(1)
+	>>> category = Category.get(1)
 	>>> category.category_name = u'cat2'
 	>>> category.save()
 	Attributes:
