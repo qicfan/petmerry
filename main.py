@@ -73,12 +73,12 @@ class LoginHandler(WebBase):
 		"""
 		
 		self.write("login")
-		category = models.Category()
-		category.category_name = 'cat1'
-		category.parent_id = 0
-		category.create_time = '2012-07-09 18:00:00'
-		id = category.save()
-		self.write(str(id))
+		user = models.User()
+		user.username = 'qicfan'
+		user.password = '123456'
+		user.email = 'qicfan@gmail.com'
+		userid = user.save()
+		self.write(str(userid))
 
 	def post(self):
 		"""
