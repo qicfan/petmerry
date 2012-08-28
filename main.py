@@ -3,11 +3,12 @@
 
 __authors__ = ['"zeroq" <qicfan@gmail.com>']
 
-import models
+import os
+import tornado.auth
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
-import os
+import WeiboAuth
 
 
 settings = {
@@ -18,6 +19,8 @@ settings = {
 	"login_url": "/login",
 	"template_path": os.path.join(os.path.dirname(__file__), "templates/default"),
 	"log_file_prefix": os.path.join(os.path.dirname(__file__), "logs"),
+	"weibo_consumer_key": "4242429219",
+	"weibo_consumer_secret": "3e56a76238dcdddb0793b6be7f982604",
 }
 
 
@@ -50,18 +53,6 @@ class MainHandler(WebBase):
 		self.render("index.html")
 
 
-class RegisterHandler(WebBase):
-	"""
-	处理注册请求
-	"""
-	
-	def get(self):
-		return
-	
-	def post(self):
-		return
-
-
 class LoginHandler(WebBase):
 	"""
 	处理登录请求
@@ -71,28 +62,15 @@ class LoginHandler(WebBase):
 		"""
 		显示登录页面
 		"""
-		
-		self.write("login")
-		user = models.User()
-		user.username = 'qicfan'
-		user.password = '123456'
-		user.email = 'qicfan@gmail.com'
-		userid = user.save()
-		self.write(str(userid))
-
-	def post(self):
-		"""
-		处理登录请求
-		"""
-		
 		return
 
 
-class GoodsHandler(WebBase):
+class GoogleHandler(WebBase, tornado.auth.GoogleMixin):
 	"""
 	使用谷歌账户登录
 	"""
-	
+
+	@tornado.web.asynchronous
 	def get(self):
 		if self.get_argument("openid.mode", None):
 			self.get_authenticated_user(self.async_callback(self._on_auth))
@@ -102,13 +80,38 @@ class GoodsHandler(WebBase):
 	def _on_auth(self, user):
 		if not user:
 			raise tornado.web.HTTPError(500, "Google auth failed")
-	# Save the user with, e.g., set_secure_cookie()
+		# Save the user with, e.g., set_secure_cookie()
+
+
+class WeiboHandler(WebBase, WeiboAuth.WeiboMixin):
+	"""
+	 使用微博账户登录
+	 """
+	@tornado.web.asynchronous
+	def get(self):
+		if self.get_argument("code", None):
+			self.get_authenticated_user(
+				redirect_uri='/weibologin',
+				client_id=self.settings["weibo_consumer_key"],
+				client_secret=self.settings["weibo_consumer_secret"],
+				code=self.get_argument("code"),
+				callback=self.async_callback(self._on_auth)
+			)
+			return
+		self.authorize_redirect(redirect_uri='/weibologin',
+			client_id=self.settings["weibo_consumer_key"])
+
+	def _on_auth(self, user):
+		if not user:
+			raise tornado.web.HTTPError(500, "Weibo auth failed")
+		# Save the user using, e.g., set_secure_cookie()
+
 
 application = tornado.web.Application([
 	(r"/", MainHandler),
 	(r"/login", LoginHandler),
-	(r"/regsiter", RegisterHandler),
-	(r"/singin", RegisterHandler),
+	(r"/login/weibo", WeiboHandler),
+	(r"/login/google", GoogleHandler),
 	(r"/static", tornado.web.StaticFileHandler),
 ], **settings)
 
