@@ -4,10 +4,12 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<link rel="shortcut icon" href="/static/images/favicon.ico">
 	<link href="{{static_url('css/base.css')}}" media="screen" rel="stylesheet" type="text/css" />
+	<link href="{{static_url('css/smoothness/jquery-ui-1.8.23.custom.css')}}" media="screen" rel="stylesheet" type="text/css" />
 	<title>{{ title }}-{% block title %}Defaut Index{% end %}</title>
 </head>
 <body>
 	{% block content %}{% end %}
 	<script type="text/javascript" src="{{static_url('js/jquery-min-1.7.2.js')}}"></script>
+	<script type="text/javascript" src="{{static_url('js/jquery-ui-1.8.23.custom.min.js')}}"></script>
 </body>
 </html>
