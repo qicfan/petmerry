@@ -3,16 +3,18 @@
 
 __authors__ = ['"zeroq" <qicfan@gmail.com>']
 
+import models
 import os
 import tornado.auth
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
+import time
 import WeiboAuth
 
 
 settings = {
-	"title": "PetMerry",
+	"title": "报名系统",
 	"debug": True,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "MTEyMjMzNDQ1NTY2Nzc4ODk5MDAxMTIyMzM0NDU1NjY3Nzg4OTkwMDExMjIzMzQ0NDU2Njc3ODg5OTAwMTEyMg==",
@@ -50,68 +52,46 @@ class MainHandler(WebBase):
 	"""
 	
 	def get(self):
-		self.render("index.html")
+		apply_time = time.strftime('%Y-%m-%d',time.localtime(time.time()))
+		basket = models.BasketBall.collection.find({"date": apply_time})
+		if not self.get_secure_cookie("apply_name"):
+			username = ""
+		else:
+			username = self.get_secure_cookie("apply_name")
+		self.render("index.html", data = basket, apply_time = apply_time, count = basket.count(), username = username)
 
+	def post(self):
+		arg = self.request.arguments
+		if "name" not in arg:
+			self.alert(u"不输入名字不能报名!", "/")
+		apply_time = time.strftime('%Y-%m-%d',time.localtime(time.time()))
 
-class LoginHandler(WebBase):
-	"""
-	处理登录请求
-	"""
-	
-	def get(self):
-		"""
-		显示登录页面
-		"""
+		username = self.get_argument("name").strip()
+		# 判断用户名长度
+		if len(username) > 10:
+			self.alert(u"你名字真有那么长吗？", "/")
+			return
+		if len(username) == 0:
+			self.alert(u"输入空格很可耻啊!", "/")
+			return
+		# 判断今日是否已经报名
+		user = models.BasketBall.collection.find_one({'date': apply_time, 'username': username})
+		if user != None:
+			self.alert(u"%s, 你已经报名参加今天的比赛了，不需要重复报名" % username, "/")
+			return
+		basket = models.BasketBall({"username": username, "addtime": time.strftime('%Y-%m-%d %X',time.localtime(time.time())), "date": apply_time})
+		basket.save()
+		self.set_secure_cookie("apply_name", username)
+		self.alert("thanks, %s" % username, "/")
 		return
 
-
-class GoogleHandler(WebBase, tornado.auth.GoogleMixin):
-	"""
-	使用谷歌账户登录
-	"""
-
-	@tornado.web.asynchronous
-	def get(self):
-		if self.get_argument("openid.mode", None):
-			self.get_authenticated_user(self.async_callback(self._on_auth))
-			return
-		self.authenticate_redirect()
-
-	def _on_auth(self, user):
-		if not user:
-			raise tornado.web.HTTPError(500, "Google auth failed")
-		# Save the user with, e.g., set_secure_cookie()
-
-
-class WeiboHandler(WebBase, WeiboAuth.WeiboMixin):
-	"""
-	 使用微博账户登录
-	 """
-	@tornado.web.asynchronous
-	def get(self):
-		if self.get_argument("code", None):
-			self.get_authenticated_user(
-				redirect_uri='/weibologin',
-				client_id=self.settings["weibo_consumer_key"],
-				client_secret=self.settings["weibo_consumer_secret"],
-				code=self.get_argument("code"),
-				callback=self.async_callback(self._on_auth)
-			)
-			return
-		self.authorize_redirect(redirect_uri='/weibologin',
-			client_id=self.settings["weibo_consumer_key"])
-
-	def _on_auth(self, user):
-		if not user:
-			raise tornado.web.HTTPError(500, "Weibo auth failed")
-		# Save the user using, e.g., set_secure_cookie()
+	def alert(self, message, url):
+		self.write("<script type='text/javascript'>alert('%s'); window.location='%s'; </script>" % (message, url))
+		self.finish()
 
 
 application = tornado.web.Application([
 	(r"/", MainHandler),
-	(r"/login", LoginHandler),
-	(r"/login/weibo", WeiboHandler),
-	(r"/login/google", GoogleHandler),
 	(r"/static", tornado.web.StaticFileHandler),
 ], **settings)
 

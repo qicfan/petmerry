@@ -1,10 +1,27 @@
 {% extends "base.html" %}
 {% block title %}{{_('Index')}}{% end %}
 {% block content %}
-<div id="wrapper">
-	<ul>
-		<li>Pet Wiki</li>
-		<li>Pet List</li>
-	</ul>
+<h1>篮球报名系统</h1>
+<div id="div_form">
+	<form method="post" name="form1">
+		<lable>姓名</lable><input type="text" name="name" value="{{username}}" /> <input type="submit" value="报名" />
+	</form>
 </div>
+<h2>{{apply_time}}报名列表</h2>
+<div>已有{{count}}个同学报名</div>
+{% if count > 0 %}
+<br />
+<table>
+	<thead>
+		<td>姓名</td>
+		<td>报名时间</td>
+	</thead>
+	{% for user in data %}
+	<tr>
+		<td>{{user.username}}</td>
+		<td>{{user.addtime}}</td>
+	</tr>
+	{% end %}
+</table>
+{% end %}
 {% end %}

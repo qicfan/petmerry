@@ -8,9 +8,9 @@ from minimongo import Model, Index, configure
 
 configure(host='127.0.0.1', port=27018, database = "test")
 
-class User(Model):
+class BasketBall(Model):
 	class Meta:
-		collection = "User"
+		collection = "BasketBall"
 		indices = (
 			Index("username"),
 		)
